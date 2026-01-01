@@ -22,6 +22,8 @@ uvicorn main:app --reload
 
 - **GET /** - Информация об API
 - **GET /time** - Получить текущее время сервера
+- **GET /date** - Получить текущую дату сервера
+- **GET /datetime** - Получить дату и время с детальной информацией
 - **GET /health** - Проверка здоровья сервера
 - **GET /docs** - Интерактивная документация Swagger UI
 - **GET /redoc** - Альтернативная документация ReDoc
@@ -65,4 +67,17 @@ docker rm time-api
 - ✅ Валидация данных с помощью Pydantic
 - ✅ Health check endpoint
 - ✅ Форматированное время (ISO 8601) и Unix timestamp
+- ✅ Эндпоинты для работы с датами
 - ✅ Docker поддержка
+- ✅ GitHub Actions CI/CD
+
+## CI/CD
+
+Проект настроен для автоматического деплоя через GitHub Actions.
+
+Подробная документация по настройке: [.github/workflows/README.md](.github/workflows/README.md)
+
+**Workflow включает:**
+- Автоматическую сборку Docker образа
+- Публикацию в GitHub Container Registry
+- Деплой на удаленный сервер через SSH
