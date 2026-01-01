@@ -79,7 +79,7 @@ jobs:
             docker run -d \
               --name server-time-api \
               --restart unless-stopped \
-              -p 8000:8000 \
+              -p 8002:8000 \
               ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
             
             # Очищаем неиспользуемые образы
