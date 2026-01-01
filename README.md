@@ -40,6 +40,24 @@ curl http://localhost:8000/time
 }
 ```
 
+## Docker
+
+### Сборка образа:
+```bash
+docker build -t server-time-api .
+```
+
+### Запуск контейнера:
+```bash
+docker run -d -p 8000:8000 --name time-api server-time-api
+```
+
+### Остановка контейнера:
+```bash
+docker stop time-api
+docker rm time-api
+```
+
 ## Особенности
 
 - ✅ Асинхронные эндпоинты
@@ -47,4 +65,4 @@ curl http://localhost:8000/time
 - ✅ Валидация данных с помощью Pydantic
 - ✅ Health check endpoint
 - ✅ Форматированное время (ISO 8601) и Unix timestamp
-
+- ✅ Docker поддержка
