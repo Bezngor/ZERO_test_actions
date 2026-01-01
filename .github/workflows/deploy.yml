@@ -8,7 +8,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_NAME: ${{ github.repository_owner }}/${{ github.event.repository.name }}
 
 jobs:
   build-and-push:
@@ -17,10 +17,17 @@ jobs:
     permissions:
       contents: read
       packages: write
+    outputs:
+      image_name: ${{ steps.image.outputs.lowercase }}
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+      
+      - name: Convert repository name to lowercase
+        id: image
+        run: |
+          echo "lowercase=${GITHUB_REPOSITORY,,}" >> $GITHUB_OUTPUT
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -33,7 +40,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.REGISTRY }}/${{ steps.image.outputs.lowercase }}
           tags: |
             type=ref,event=branch
             type=sha,prefix={{branch}}-
@@ -56,31 +63,37 @@ jobs:
     steps:
       - name: Deploy to server via SSH
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          IMAGE_FULL: ${{ env.REGISTRY }}/${{ needs.build-and-push.outputs.image_name }}:latest
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          REGISTRY: ${{ env.REGISTRY }}
         with:
           host: ${{ secrets.REMOTE_HOST }}
           username: ${{ secrets.REMOTE_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.REMOTE_PORT || 22 }}
+          envs: IMAGE_FULL,GITHUB_TOKEN,GITHUB_ACTOR,REGISTRY
           script: |
             # Логинимся в GitHub Container Registry
-            echo ${{ secrets.GITHUB_TOKEN }} | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+            echo $GITHUB_TOKEN | docker login $REGISTRY -u $GITHUB_ACTOR --password-stdin
             
             # Останавливаем и удаляем старый контейнер (если существует)
             docker stop server-time-api || true
             docker rm server-time-api || true
             
             # Удаляем старый образ
-            docker rmi ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest || true
+            docker rmi $IMAGE_FULL || true
             
             # Скачиваем новый образ
-            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            docker pull $IMAGE_FULL
             
             # Запускаем новый контейнер
             docker run -d \
               --name server-time-api \
               --restart unless-stopped \
               -p 8002:8000 \
-              ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+              $IMAGE_FULL
             
             # Очищаем неиспользуемые образы
             docker image prune -f
